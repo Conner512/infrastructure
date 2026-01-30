@@ -1,11 +1,11 @@
 services:
   cloudflare_ddns:
-    image: conner0512/cloudflare_ddns:2.3 # 使用自定义构建的镜像
+    image: conner0512/cloudflare_ddns:2.3
     container_name: cloudflare_ddns
     environment:
-      API_TOKEN: axT1OtsrhjpSyAipewqeqlRchwA8fQcijJ5lt # 替换为你的 Cloudflare API Token
-      ZONE_NAME: connerhome.org # 替换为你的域名
-      DNS_RECORD_NAME: ddns.connerhome.org # 替换为你的子域名
-      PROXIED: false # 是否启用 Cloudflare 的代理功能
+      API_TOKEN: ${CF_API_TOKEN}
+      ZONE_NAME: connerhome.org
+      DNS_RECORD_NAME: ddns.connerhome.org
+      PROXIED: false
     restart: unless-stopped
 networks: {}

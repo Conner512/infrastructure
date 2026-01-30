@@ -1,14 +1,11 @@
-version: "3"
-
 services:
   teslamate:
-    #image: ccr.ccs.tencentyun.com/dhuar/teslamate:latest
     image: teslamate/teslamate:latest
     restart: always
     environment:
-      - ENCRYPTION_KEY=Vampire512(LW) #insert a secure key to encrypt your Tesla API tokens
+      - ENCRYPTION_KEY=${PVE_TESLAMATE_ENCRYPTION_KEY}
       - DATABASE_USER=teslamate
-      - DATABASE_PASS=Vampire512(LW) #insert your secure database password!
+      - DATABASE_PASS=${PVE_TESLAMATE_DB_PASS}
       - DATABASE_NAME=teslamate
       - DATABASE_HOST=database
       - MQTT_HOST=mosquitto
@@ -20,23 +17,21 @@ services:
       - all
 
   database:
-    #image: ccr.ccs.tencentyun.com/dhuar/postgres:17
     image: postgres:17-trixie
     restart: always
     environment:
       - POSTGRES_USER=teslamate
-      - POSTGRES_PASSWORD=Vampire512(LW) #insert your secure database password!
+      - POSTGRES_PASSWORD=${PVE_TESLAMATE_DB_PASS}
       - POSTGRES_DB=teslamate
     volumes:
       - teslamate-db:/var/lib/postgresql/data
 
   grafana:
     image: teslamate/grafana:latest
-    #image: ccr.ccs.tencentyun.com/dhuar/grafana:latest
     restart: always
     environment:
       - DATABASE_USER=teslamate
-      - DATABASE_PASS=Vampire512(LW) #insert your secure database password!
+      - DATABASE_PASS=${PVE_TESLAMATE_DB_PASS}
       - DATABASE_NAME=teslamate
       - DATABASE_HOST=database
     ports:
@@ -46,39 +41,33 @@ services:
 
   mosquitto:
     image: eclipse-mosquitto:2
-    #image: ccr.ccs.tencentyun.com/dhuar/eclipse-mosquitto:2
     restart: always
     command: mosquitto -c /mosquitto-no-auth.conf
-    # ports:
-    #   - 1883:1883
     volumes:
       - mosquitto-conf:/mosquitto/config
       - mosquitto-data:/mosquitto/data
 
-  # 添加 TeslaMateAPI 服务
   teslamateapi:
     image: mytesla/teslamateapi:testflight
     container_name: teslamateapi
     restart: unless-stopped
     environment:
-      - DATABASE_USER=teslamate        # 与 TeslaMate 相同
-      - DATABASE_PASS=Vampire512(LW)        # 与 TeslaMate 相同
-      - DATABASE_NAME=teslamate        # 与 TeslaMate 相同
-      - DATABASE_HOST=database             # 您的数据库服务名
-      - ENCRYPTION_KEY=Vampire512(LW # ⚠️ 必须与 TeslaMate 完全相同！
-      - MQTT_HOST=mosquitto                # 如果使用 MQTT
-      - TZ=Asia/Shanghai            # 📍 请替换为您的时区，参考 https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-      - API_TOKEN=c99d971688c5ebe788c83bbb8cd950892e8871900b0bcaf312bac72193f284e2             # 🔐 强烈建议设置以提高安全性
+      - DATABASE_USER=teslamate
+      - DATABASE_PASS=${PVE_TESLAMATE_DB_PASS}
+      - DATABASE_NAME=teslamate
+      - DATABASE_HOST=database
+      - ENCRYPTION_KEY=${PVE_TESLAMATE_ENCRYPTION_KEY}
+      - MQTT_HOST=mosquitto
+      - TZ=Asia/Shanghai
+      - API_TOKEN=${PVE_TESLAMATE_API_TOKEN}
     ports:
-      - "8090:8080"  # 可修改为其他端口
+      - "8090:8080"
     volumes:
       - teslamateapi-data:/opt/app/data
     depends_on:
-      - database  # 确保与您的数据库服务名匹配
+      - database
       - teslamate
       - mosquitto
-
-
 
 volumes:
   teslamate-db:
