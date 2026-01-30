@@ -1,0 +1,97 @@
+
+services:
+  teslamate:
+    #image: ccr.ccs.tencentyun.com/dhuar/teslamate:latest
+    image: teslamate/teslamate:latest
+    restart: always
+    environment:
+      - ENCRYPTION_KEY=Vampire512(LW) #insert a secure key to encrypt your Tesla API tokens
+      - DATABASE_USER=teslamate
+      - DATABASE_PASS=Vampire512(LW) #insert your secure database password!
+      - DATABASE_NAME=teslamate
+      - DATABASE_HOST=database
+      - MQTT_HOST=mosquitto
+      #- PROXY=http://10.5.12.253:6152
+      #- HTTP_PROXY=http://10.5.12.253:6152
+      #- HTTPS_PROXY=http://10.5.12.253:6152
+      #- NO_PROXY=database,mosquitto,grafana,localhost,127.0.0.1
+    extra_hosts:
+      - "nominatim.openstreetmap.org:host-gateway"
+    ports:
+      - 4000:4000
+    volumes:
+      - ./import:/opt/app/import
+    cap_drop:
+      - all
+
+  database:
+    #image: ccr.ccs.tencentyun.com/dhuar/postgres:17
+    image: postgres:17-trixie
+    restart: always
+    environment:
+      #- PROXY=http://10.5.12.253:6152
+      - POSTGRES_USER=teslamate
+      - POSTGRES_PASSWORD=Vampire512(LW) #insert your secure database password!
+      - POSTGRES_DB=teslamate
+    volumes:
+      - teslamate-db:/var/lib/postgresql/data  
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  grafana:
+    image: teslamate/grafana:latest
+    #image: ccr.ccs.tencentyun.com/dhuar/grafana:latest
+    restart: always
+    environment:
+      - DATABASE_USER=teslamate
+      - DATABASE_PASS=Vampire512(LW) #insert your secure database password!
+      - DATABASE_NAME=teslamate
+      - DATABASE_HOST=database
+    ports:
+      - 3000:3000
+    volumes:
+      - teslamate-grafana-data:/var/lib/grafana
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    #image: ccr.ccs.tencentyun.com/dhuar/eclipse-mosquitto:2
+    restart: always
+    command: mosquitto -c /mosquitto-no-auth.conf
+    # ports:
+    #   - 1883:1883
+    volumes:
+      - mosquitto-conf:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+  # 添加 TeslaMateAPI 服务
+  teslamateapi:
+    image: mytesla/teslamateapi:testflight
+    container_name: teslamateapi
+    restart: unless-stopped
+    environment:
+      - DATABASE_USER=teslamate        # 与 TeslaMate 相同
+      - DATABASE_PASS=Vampire512(LW)        # 与 TeslaMate 相同
+      - DATABASE_NAME=teslamate        # 与 TeslaMate 相同
+      - DATABASE_HOST=database             # 您的数据库服务名
+      - ENCRYPTION_KEY=Vampire512(LW # ⚠️ 必须与 TeslaMate 完全相同！
+      - MQTT_HOST=mosquitto                # 如果使用 MQTT
+      - TZ=Asia/Shanghai            # 📍 请替换为您的时区，参考 https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+      - API_TOKEN=c99d971688c5ebe788c83bbb8cd950892e8871900b0bcaf312bac72193f284e2             # 🔐 强烈建议设置以提高安全性
+    ports:
+      - "8090:8080"  # 可修改为其他端口
+    volumes:
+      - teslamateapi-data:/opt/app/data
+    depends_on:
+      - database  # 确保与您的数据库服务名匹配
+      - teslamate
+      - mosquitto
+
+
+
+
+volumes:
+  teslamate-db:
+  teslamate-grafana-data:
+  mosquitto-conf:
+  mosquitto-data:
+  teslamateapi-data:
+    driver: local

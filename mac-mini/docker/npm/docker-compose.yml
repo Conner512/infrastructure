@@ -1,0 +1,30 @@
+
+services:
+  npm:
+    image: 'docker.io/jc21/nginx-proxy-manager:latest'
+    container_name: npm
+    restart: always
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - /Users/weilu/Docker/nginx_proxy_manager/nginx_log/data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: always
+    # 用你的 tunnel ID、认证 json、config.yml 路径
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml --protocol http2 run
+    volumes:
+      - ./cloudflare_tunnel:/etc/cloudflared
+    # 通常不需要暴露端口
+
+# 可选：自定义网络（不写会自动建，写了可以指定更多服务加入）
+# networks:
+#   default:
+#     name: npm_network

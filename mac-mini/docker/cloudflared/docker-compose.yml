@@ -1,0 +1,15 @@
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: always
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - /Users/weilu/Desktop/Docker/cloudflare_tunnel:/etc/cloudflared
+    networks:
+      - npm_network
+    # 如有必要，可以加 environment
+
+networks:
+  npm_network:
+    external: true   # 假如NPM也在docker，建议公用网络
