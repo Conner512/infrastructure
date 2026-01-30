@@ -1,0 +1,25 @@
+version: '3'
+services:
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: docker-socket-proxy
+    restart: always
+    # ⚠️ 关键权限：必须给 privileged 才能读取 socket
+    privileged: true
+    ports:
+      # 左边是宿主机端口，右边是容器端口
+      # Docker 会自动把 Mac 的 2375 绑定到 0.0.0.0，这样阿里云就能访问了
+      - "2375:2375" 
+    volumes:
+      # 把 Mac 的 Docker socket 挂载进去
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      # ✅ 允许查询的信息
+      - CONTAINERS=1 
+      - SERVICES=1
+      - TASKS=1
+      - INFO=1
+      - IMAGES=1 # 建议开启，方便看镜像信息
+      # ❌ 严禁修改操作 (只读模式)
+      - POST=0
+      - DELETE=0
